@@ -1,0 +1,25 @@
+{
+  "name": "edu-track",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Multi-school student information and academic management system (EduTrack MVP)",
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:web": "cd web && npm run dev",
+    "db:generate": "cd server && npx prisma generate",
+    "db:migrate:dev": "cd server && npx prisma migrate dev",
+    "db:studio": "cd server && npx prisma studio",
+    "test": "cd server && npm test && cd ../web && npm test",
+    "lint": "cd server && npm run lint && cd ../web && npm run lint",
+    "prepare": "cd server && npm run prepare"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "prettier": "^3.2.5",
+    "eslint": "^8.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

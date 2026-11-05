@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: edutrack
+          POSTGRES_PASSWORD: edutrack
+          POSTGRES_DB: edutrack
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U edutrack"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint server
+        run: npm run lint --workspace=@edutrack/server
+
+      - name: Lint web
+        run: npm run lint --workspace=@edutrack/web
+
+      - name: Generate Prisma client
+        working-directory: ./server
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://edutrack:edutrack@localhost:5432/edutrack"
+
+      - name: Run migrations
+        working-directory: ./server
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: "postgresql://edutrack:edutrack@localhost:5432/edutrack"
+
+      - name: Run server tests
+        working-directory: ./server
+        run: npm test
+        env:
+          DATABASE_URL: "postgresql://edutrack:edutrack@localhost:5432/edutrack"
+          NODE_ENV: "test"
+
+      - name: Build web
+        run: npm run build --workspace=@edutrack/web
