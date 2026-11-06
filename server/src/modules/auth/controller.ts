@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import * as authService from "./service";
 import { sendSuccess, sendError } from "../../utils/response";
 import { asyncHandler } from "../../middleware/error";
@@ -30,7 +30,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  const token = req.cookies?.session_token;
+  const token = (req.cookies as Record<string, string> | undefined)?.session_token;
   if (token) await authService.logout(token);
   res.clearCookie("session_token", { path: "/" });
   sendSuccess(res, { message: "Logged out" });
@@ -49,7 +49,7 @@ export const confirmPasswordReset = asyncHandler(async (req: Request, res: Respo
 });
 
 export const me = asyncHandler(async (req: Request, res: Response) => {
-  const auth = (req as Request & { auth?: { userId: string } }).auth;
+  const auth = req.auth;
   if (!auth) {
     sendError(res, "UNAUTHENTICATED", "Authentication required", 401);
     return;

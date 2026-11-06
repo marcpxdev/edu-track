@@ -7,7 +7,7 @@ module.exports = {
     ecmaFeatures: { jsx: true },
     project: "./tsconfig.json",
   },
-  plugins: ["@typescript-eslint", "react-refresh"],
+  plugins: ["@typescript-eslint"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -20,7 +20,6 @@ module.exports = {
   rules: {
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-    "react-refresh/only-export-components": "warn",
   },
   ignorePatterns: ["dist/", "build/", "node_modules/"],
 };

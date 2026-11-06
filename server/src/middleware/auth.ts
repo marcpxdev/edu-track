@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../config/prisma";
 
 export interface AuthContext {
@@ -9,21 +9,43 @@ export interface AuthContext {
 }
 
 /**
+ * Extracts an optional schoolId hint from the request without trusting it.
+ * Auth middleware uses this only to resolve which school role to attach;
+ * tenantIsolation middleware will re-derive and enforce the authorized school.
+ */
+function getSchoolIdHint(req: Request): string | undefined {
+  if (typeof req.query.schoolId === "string") return req.query.schoolId;
+  if (
+    typeof req.body === "object" &&
+    req.body !== null &&
+    typeof (req.body as Record<string, unknown>).schoolId === "string"
+  ) {
+    return (req.body as Record<string, unknown>).schoolId as string;
+  }
+  return undefined;
+}
+
+/**
  * Authentication middleware (cookie-based session).
  * Resolves the user's session, then their membership role within the school.
- * Attaches req.auth and req.schoolId for downstream middleware/handlers.
+ * Attaches req.auth for downstream middleware/handlers.
  *
  * Note: school membership is resolved here against a specific school context.
  * For endpoints that don't yet know the school (e.g. school profile lookup),
- * see the optional variant resolveAuthWithoutSchool.
+ * see the optional variant optionalAuth.
  */
+function getSessionToken(req: Request): string | undefined {
+  const rawCookies = req.cookies as Record<string, unknown> | undefined;
+  return typeof rawCookies?.session_token === "string" ? rawCookies.session_token : undefined;
+}
+
 export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.cookies?.session_token;
+    const token = getSessionToken(req);
     if (!token) {
       res.status(401).json({
         success: false,
@@ -54,15 +76,15 @@ export const authenticate = async (
     }
 
     // Update lastUsedAt (non-blocking)
-    prisma.session.update({
+    await prisma.session.update({
       where: { id: session.id },
       data: { lastUsedAt: new Date() },
     }).catch(() => {});
 
     // Resolve the user's membership for the school in context.
-    // The schoolId may come from a header/param for multi-school users;
+    // The schoolId may come from query/body for multi-school users;
     // tenantIsolation middleware will re-derive and enforce it.
-    const schoolId = (req as any).schoolId || req.query.schoolId || req.body.schoolId;
+    const schoolId = getSchoolIdHint(req);
 
     let membershipRole = "TEACHER";
     if (schoolId) {
@@ -72,10 +94,10 @@ export const authenticate = async (
       if (membership) membershipRole = membership.role;
     }
 
-    (req as Request & { auth?: AuthContext }).auth = {
+    req.auth = {
       userId: session.user.id,
       email: session.user.email,
-      schoolId: schoolId || "",
+      schoolId: schoolId ?? "",
       role: membershipRole,
     };
 
@@ -94,7 +116,7 @@ export const optionalAuth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.cookies?.session_token;
+    const token = getSessionToken(req);
     if (!token) {
       next();
       return;
@@ -111,12 +133,12 @@ export const optionalAuth = async (
     }
 
     // Update lastUsedAt (non-blocking)
-    prisma.session.update({
+    await prisma.session.update({
       where: { id: session.id },
       data: { lastUsedAt: new Date() },
     }).catch(() => {});
 
-    const schoolId = (req as any).schoolId || req.query.schoolId || req.body.schoolId;
+    const schoolId = getSchoolIdHint(req);
 
     let membershipRole = "TEACHER";
     if (schoolId) {
@@ -126,10 +148,10 @@ export const optionalAuth = async (
       if (membership) membershipRole = membership.role;
     }
 
-    (req as Request & { auth?: AuthContext }).auth = {
+    req.auth = {
       userId: session.user.id,
       email: session.user.email,
-      schoolId: schoolId || "",
+      schoolId: schoolId ?? "",
       role: membershipRole,
     };
 

@@ -3,14 +3,15 @@ import { authenticate } from "../../middleware/auth";
 import { tenantIsolation } from "../../middleware/tenant";
 import { requireRole } from "../../middleware/rbac";
 import { validate } from "../../middleware/validation";
-import { schoolProfileSchema, updateSchoolSchema } from "./schema";
+import { asyncHandler } from "../../middleware/error";
+import { updateSchoolSchema } from "./schema";
 import * as controller from "./controller";
 
 const router = Router();
 
 // All school routes require authentication + tenant isolation
-router.use(authenticate);
-router.use(tenantIsolation);
+router.use(asyncHandler(authenticate));
+router.use(asyncHandler(tenantIsolation));
 
 router.get("/me", controller.getProfile);
 router.patch("/me", validate(updateSchoolSchema, "body"), controller.updateProfile);

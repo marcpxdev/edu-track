@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import * as schoolService from "./service";
 import { sendSuccess, sendError } from "../../utils/response";
 import { asyncHandler } from "../../middleware/error";
-import { schoolProfileSchema, updateSchoolSchema } from "./schema";
+import { updateSchoolSchema } from "./schema";
 import { getSchoolId } from "../../middleware/tenant";
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
