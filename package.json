@@ -11,8 +11,7 @@
     "db:migrate:dev": "cd server && npx prisma migrate dev",
     "db:studio": "cd server && npx prisma studio",
     "test": "cd server && npm test && cd ../web && npm test",
-    "lint": "cd server && npm run lint && cd ../web && npm run lint",
-    "prepare": "cd server && npm run prepare"
+    "lint": "npm run lint --workspace=@edutrack/server && npm run lint --workspace=@edutrack/web"
   },
   "devDependencies": {
     "typescript": "^5.4.5",

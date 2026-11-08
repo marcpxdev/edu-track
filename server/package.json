@@ -13,8 +13,7 @@
     "prisma:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src tests --ext .ts",
-    "prepare": "husky"
+    "lint": "eslint src tests --ext .ts"
   },
   "dependencies": {
     "@prisma/client": "^5.11.0",
@@ -35,6 +34,8 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "eslint": "^8.57.0",
     "prisma": "^5.11.0",
     "supertest": "^6.3.4",

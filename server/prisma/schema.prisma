@@ -56,9 +56,15 @@ model School {
   subjects       Subject[]
   teachers       TeacherProfile[]
   students       StudentProfile[]
-  guardians      GuardianProfile[]
-  announcements  Announcement[]
-  auditLogs      AuditLog[]
+  guardians             GuardianProfile[]
+  announcements         Announcement[]
+  auditLogs             AuditLog[]
+  teachingAssignments   TeachingAssignment[]
+  attendanceSessions    AttendanceSession[]
+  enrollments           Enrollment[]
+  gradingPeriods        GradingPeriod[]
+  grades                Grade[]
+  notifications         Notification[]
 
   @@index([isActive])
 }
@@ -77,6 +83,10 @@ model User {
   memberships   UserSchoolMembership[]
   sessions      Session[]
   auditLogs     AuditLog[]
+  teacher       TeacherProfile?
+  student       StudentProfile?
+  guardian      GuardianProfile?
+  notifications Notification[]
 
   @@index([email])
   @@index([isActive])
@@ -113,17 +123,17 @@ model UserSchoolMembership {
 }
 
 model AcademicYear {
-  id          String   @id @default(uuid())
-  schoolId    String
-  name        String
-  startDate   DateTime
-  endDate     DateTime
-  isActive    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id                String   @id @default(uuid())
+  schoolId          String
+  name              String
+  startDate         DateTime
+  endDate           DateTime
+  isActive          Boolean  @default(false)
+  createdAt         DateTime @default(now())
 
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  gradeLevels GradeLevel[]
-  enrollments Enrollment[]
+  school            School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  enrollments       Enrollment[]
+  teachingAssignments TeachingAssignment[]
 
   @@index([schoolId])
   @@index([schoolId, isActive])
@@ -151,10 +161,11 @@ model Section {
 
   school      School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   gradeLevel  GradeLevel    @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-  subjects    Subject[]
-  assignments TeachingAssignment[]
-  enrollments Enrollment[]
-  attendance  AttendanceSession[]
+  subjects          Subject[]
+  assignments       TeachingAssignment[]
+  enrollments       Enrollment[]
+  attendanceSessions AttendanceSession[]
+  announcements     Announcement[]
 
   @@index([schoolId])
   @@index([schoolId, gradeLevelId])
@@ -188,6 +199,8 @@ model TeacherProfile {
   school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignments TeachingAssignment[]
+  attendanceSessions AttendanceSession[]
+  attendanceRecords  AttendanceRecord[]
 
   @@index([schoolId])
   @@index([userId])
@@ -205,7 +218,6 @@ model StudentProfile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   guardians   StudentGuardian[]
   enrollments Enrollment[]
-  attendance  AttendanceRecord[]
   grades      Grade[]
 
   @@index([schoolId])
