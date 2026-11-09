@@ -94,13 +94,46 @@ export const optionalAuth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    await authenticate(req as Request, res as Response, (err?: unknown) => {
-      if (err) next();
-    });
-    // If authenticate didn't call next (401), fall through — but we treat missing auth as optional
-    if (!(req as Request & { auth?: AuthContext }).auth) {
+    const token = req.cookies?.session_token;
+    if (!token) {
       next();
+      return;
     }
+
+    const session = await prisma.session.findUnique({
+      where: { tokenHash: token },
+      include: { user: true },
+    });
+
+    if (!session || session.expiresAt < new Date() || !session.user.isActive) {
+      next();
+      return;
+    }
+
+    // Update lastUsedAt (non-blocking)
+    prisma.session.update({
+      where: { id: session.id },
+      data: { lastUsedAt: new Date() },
+    }).catch(() => {});
+
+    const schoolId = (req as any).schoolId || req.query.schoolId || req.body.schoolId;
+
+    let membershipRole = "TEACHER";
+    if (schoolId) {
+      const membership = await prisma.userSchoolMembership.findFirst({
+        where: { userId: session.user.id, schoolId, isActive: true },
+      });
+      if (membership) membershipRole = membership.role;
+    }
+
+    (req as Request & { auth?: AuthContext }).auth = {
+      userId: session.user.id,
+      email: session.user.email,
+      schoolId: schoolId || "",
+      role: membershipRole,
+    };
+
+    next();
   } catch {
     next();
   }
