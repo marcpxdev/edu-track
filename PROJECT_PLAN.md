@@ -310,7 +310,7 @@ Phase 6 (docs, security, portfolio)
 ## Risk & mitigation
 
 | Risk | Mitigation |
-|------|------------|
+|------|--------|
 | Render free service sleeps / cold starts | Acceptable for portfolio demo; document it |
 | Neon free tier quota limits | Keep dev data small; use synthetic data; monitor usage |
 | Tenant isolation bug leaks data | Write isolation tests first in Phase 1; test every CRUD op |
