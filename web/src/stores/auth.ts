@@ -49,7 +49,7 @@ export function setAuth(partial: Partial<AuthState>) {
 export async function fetchMe() {
   const res = await fetch("/api/v1/auth/me", { credentials: "include" });
   if (res.ok) {
-    const data = await res.json();
+    const data = (await res.json()) as { data: { user: AuthUser } };
     setAuth({ user: data.data.user, isAuthenticated: true, isLoading: false });
   } else {
     setAuth({ user: null, isAuthenticated: false, isLoading: false });
