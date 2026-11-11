@@ -2,6 +2,9 @@ import { prisma } from "../../config/prisma";
 import { logger } from "../../config/logger";
 
 export async function getSchoolProfile(schoolId: string) {
+  // NOTE: This service layer does NOT enforce tenant isolation.
+  // That's the responsibility of the middleware (tenantIsolation).
+  // This test demonstrates that we need middleware-based tenant isolation.
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
     include: {
