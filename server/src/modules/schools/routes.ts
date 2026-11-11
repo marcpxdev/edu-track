@@ -12,8 +12,8 @@ const router = Router();
 router.use(authenticate);
 router.use(tenantIsolation);
 
-router.get("/me", controller.getProfile);
-router.patch("/me", validate(updateSchoolSchema, "body"), controller.updateProfile);
+router.get("/me", requireRole("SCHOOL_ADMIN", "PLATFORM_ADMIN"), controller.getProfile);
+router.patch("/me", requireRole("SCHOOL_ADMIN", "PLATFORM_ADMIN"), validate(updateSchoolSchema, "body"), controller.updateProfile);
 router.get("/users", requireRole("SCHOOL_ADMIN", "PLATFORM_ADMIN"), controller.getUsers);
 router.delete("/users/:userId", requireRole("SCHOOL_ADMIN", "PLATFORM_ADMIN"), controller.deactivateUser);
 
