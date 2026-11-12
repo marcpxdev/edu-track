@@ -5,7 +5,6 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/error";
 import { env } from "./config/env";
-import { logger } from "./config/logger";
 import apiRouter from "./modules";
 
 export function createApp() {

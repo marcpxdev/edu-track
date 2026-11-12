@@ -1,12 +1,22 @@
 import { prisma } from "../../config/prisma";
 import { logger } from "../../config/logger";
-import { env } from "../../config/env";
 import argon2 from "argon2";
+import crypto from "crypto";
 
 /**
  * Auth service — MVP 1: registration, login, session management, password reset.
  * All mutations are scoped to a single school (tenant isolation).
  */
+
+interface AppError extends Error {
+  statusCode?: number;
+}
+
+function errorWithStatus(message: string, statusCode: number): AppError {
+  const err = new Error(message) as AppError;
+  err.statusCode = statusCode;
+  return err;
+}
 
 export async function register(input: {
   email: string;
@@ -17,9 +27,7 @@ export async function register(input: {
 }) {
   const existingUser = await prisma.user.findUnique({ where: { email: input.email } });
   if (existingUser) {
-    const err: any = new Error("EMAIL_ALREADY_EXISTS");
-    err.statusCode = 409;
-    throw err;
+    throw errorWithStatus("EMAIL_ALREADY_EXISTS", 409);
   }
 
   const passwordHash = await argon2.hash(input.password);
@@ -52,26 +60,19 @@ export async function register(input: {
 export async function login(input: { email: string; password: string }) {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
   if (!user) {
-    const err: any = new Error("INVALID_CREDENTIALS");
-    err.statusCode = 401;
-    throw err;
+    throw errorWithStatus("INVALID_CREDENTIALS", 401);
   }
 
   const valid = await argon2.verify(user.passwordHash, input.password);
   if (!valid) {
-    const err: any = new Error("INVALID_CREDENTIALS");
-    err.statusCode = 401;
-    throw err;
+    throw errorWithStatus("INVALID_CREDENTIALS", 401);
   }
 
   if (!user.isActive) {
-    const err: any = new Error("USER_INACTIVE");
-    err.statusCode = 401;
-    throw err;
+    throw errorWithStatus("USER_INACTIVE", 401);
   }
 
   // Create session
-  const crypto = require("crypto");
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = token; // In production, hash the token before storing
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -92,7 +93,6 @@ export async function requestPasswordReset(input: { email: string }) {
   // Always succeed (don't leak whether email exists)
   if (!user) return { sent: true };
 
-  const crypto = require("crypto");
   const resetToken = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
@@ -112,9 +112,7 @@ export async function confirmPasswordReset(input: { token: string; newPassword: 
   });
 
   if (!session || session.expiresAt < new Date()) {
-    const err: any = new Error("INVALID_OR_EXPIRED_TOKEN");
-    err.statusCode = 400;
-    throw err;
+    throw errorWithStatus("INVALID_OR_EXPIRED_TOKEN", 400);
   }
 
   const passwordHash = await argon2.hash(input.newPassword);
@@ -137,9 +135,7 @@ export async function getSessionUser(userId: string) {
     select: { id: true, email: true, firstName: true, lastName: true, isActive: true, createdAt: true },
   });
   if (!user) {
-    const err: any = new Error("USER_NOT_FOUND");
-    err.statusCode = 404;
-    throw err;
+    throw errorWithStatus("USER_NOT_FOUND", 404);
   }
   return user;
 }

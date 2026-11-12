@@ -1,7 +1,20 @@
 import { prisma } from "../../config/prisma";
 import { logger } from "../../config/logger";
 
+interface AppError extends Error {
+  statusCode?: number;
+}
+
+function errorWithStatus(message: string, statusCode: number): AppError {
+  const err = new Error(message) as AppError;
+  err.statusCode = statusCode;
+  return err;
+}
+
 export async function getSchoolProfile(schoolId: string) {
+  // NOTE: This service layer does NOT enforce tenant isolation.
+  // That's the responsibility of the middleware (tenantIsolation).
+  // This test demonstrates that we need middleware-based tenant isolation.
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
     include: {
@@ -9,9 +22,7 @@ export async function getSchoolProfile(schoolId: string) {
     },
   });
   if (!school) {
-    const err: any = new Error("SCHOOL_NOT_FOUND");
-    err.statusCode = 404;
-    throw err;
+    throw errorWithStatus("SCHOOL_NOT_FOUND", 404);
   }
   return school;
 }
@@ -39,9 +50,7 @@ export async function deactivateUser(schoolId: string, userId: string) {
     where: { schoolId, userId, isActive: true },
   });
   if (!membership) {
-    const err: any = new Error("MEMBERSHIP_NOT_FOUND");
-    err.statusCode = 404;
-    throw err;
+    throw errorWithStatus("MEMBERSHIP_NOT_FOUND", 404);
   }
   await prisma.userSchoolMembership.update({
     where: { id: membership.id },
